@@ -1,4 +1,4 @@
-User-agent: *
+﻿User-agent: *
 Allow: /
 
-Sitemap: https://chineseidioms.app/sitemap.xml
+Sitemap: https://idioms.games/sitemap.xml
