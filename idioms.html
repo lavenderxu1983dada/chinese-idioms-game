@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chinese Idioms (Chéngyǔ) List with Pinyin & Meaning</title>
+  <meta name="description" content="A browsable list of common Chinese idioms (chéngyǔ) with pinyin, literal translation, English meaning, and emoji hints. Filter by difficulty and search.">
+  <meta name="keywords" content="chinese idioms list, chengyu list, chinese idioms with meaning, chinese idioms with pinyin, common chinese idioms">
+  <meta name="theme-color" content="#0f1117">
+  <link rel="canonical" href="https://chineseidioms.app/idioms">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Chinese Idioms (Chéngyǔ) List with Pinyin & Meaning">
+  <meta property="og:description" content="Browse common Chinese idioms with pinyin, literal translation, and English meaning.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="css/style.css">
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"ItemList",
+    "name":"Chinese Idioms (Chéngyǔ) Reference List",
+    "description":"A curated list of common Chinese four-character idioms with pinyin and English meanings.",
+    "url":"https://chineseidioms.app/idioms"
+  }
+  </script>
+</head>
+<body>
+  <header class="nav">
+    <a class="brand" href="/">
+      <span class="mark">成语</span>
+      <span class="sub">Chinese Idioms Game</span>
+    </a>
+    <nav class="nav-links">
+      <a href="/">Play</a>
+      <a href="/idioms" class="active">Idiom List</a>
+    </nav>
+  </header>
+
+  <main class="main">
+    <div class="hero">
+      <h1>Chinese Idioms <span class="cn">成语</span></h1>
+      <p>A reference of common four-character idioms (chéngyǔ) with pinyin, literal meaning, and explanation. Search and filter, then <a href="/" style="color:var(--gold2);">play the game →</a></p>
+    </div>
+
+    <input class="search" id="search" type="search" placeholder="Search by character, pinyin, or meaning…" autocomplete="off">
+    <div class="filter-bar">
+      <div class="seg" id="lvlSeg" role="group" aria-label="Difficulty filter"></div>
+      <span style="align-self:center;color:var(--muted);font-size:13px;" id="count"></span>
+    </div>
+
+    <div class="grid" id="grid"></div>
+  </main>
+
+  <footer>
+    <p><a href="/">← Back to the game</a></p>
+  </footer>
+
+  <script src="js/idioms.js"></script>
+  <script src="js/list.js"></script>
+</body>
+</html>

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chinese Idioms Game — Learn Chéngyǔ by Playing</title>
+  <meta name="description" content="Play a free Chinese idioms (chéngyǔ) game. Guess the four-character idiom from emoji clues and English meanings, with pinyin and breakdowns for every answer. Great for intermediate Chinese learners.">
+  <meta name="keywords" content="chinese idioms game, chengyu, chéngyǔ, learn chinese idioms, guess the idiom, chinese idiom quiz, pinyin">
+  <meta name="author" content="Chinese Idioms Game">
+  <meta name="theme-color" content="#0f1117">
+  <link rel="canonical" href="https://chineseidioms.app/">
+
+  <!-- Open Graph / social -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Chinese Idioms Game — Learn Chéngyǔ by Playing">
+  <meta property="og:description" content="Guess four-character Chinese idioms from emoji clues. Pinyin, literal meaning, and English explanation for every chéngyǔ.">
+  <meta property="og:url" content="https://chineseidioms.app/">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Chinese Idioms Game">
+  <meta name="twitter:description" content="Guess four-character Chinese idioms from emoji clues, with pinyin and English meanings.">
+
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="css/style.css">
+
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"Game",
+    "name":"Chinese Idioms Game",
+    "description":"A free browser game to learn Chinese idioms (chéngyǔ) by guessing four-character phrases from emoji clues and English meanings.",
+    "genre":["Educational","Puzzle","Language Learning"],
+    "applicationCategory":"GameApplication",
+    "inLanguage":["en","zh"],
+    "offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},
+    "url":"https://chineseidioms.app/"
+  }
+  </script>
+</head>
+<body>
+  <header class="nav">
+    <a class="brand" href="/">
+      <span class="mark">成语</span>
+      <span class="sub">Chinese Idioms Game</span>
+    </a>
+    <nav class="nav-links">
+      <a href="/" class="active">Play</a>
+      <a href="/idioms">Idiom List</a>
+    </nav>
+  </header>
+
+  <main class="main">
+    <div class="hero">
+      <h1>Guess the <span class="cn">成语</span></h1>
+      <p>Read the emoji and English meaning, then build the four-character idiom. Pinyin and a breakdown appear after every answer.</p>
+    </div>
+
+    <!-- difficulty + pinyin toggle -->
+    <div class="controls">
+      <div class="seg" id="diffSeg" role="group" aria-label="Difficulty"></div>
+      <label class="toggle" title="Show pinyin under each slot while playing">
+        <input type="checkbox" id="pyToggle">
+        <span class="track"></span>
+        <span>Pinyin</span>
+      </label>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="k">SCORE</div><div class="v" id="score">0</div></div>
+      <div class="stat combo"><div class="k">COMBO</div><div class="v" id="combo">0</div></div>
+      <div class="stat">
+        <div class="k">LIVES</div>
+        <div class="lives" id="lives"></div>
+      </div>
+    </div>
+    <div class="stat" style="margin-bottom:14px; display:flex; justify-content:center; align-items:center; gap:18px;">
+      <span><span class="k" style="font-size:11px;color:var(--muted);">BEST</span> <strong style="color:var(--gold2);" id="best">0</strong></span>
+    </div>
+
+    <div class="card">
+      <div class="hint">
+        <div class="emoji" id="emoji">🎯</div>
+        <div class="meaning" id="meaning">Loading…</div>
+      </div>
+
+      <div class="slots" id="slots"></div>
+      <div id="breakdown" style="display:none;"></div>
+
+      <div class="pool" id="pool"></div>
+
+      <div class="actions">
+        <button class="btn" id="btnClear">Clear</button>
+        <button class="btn" id="btnHint">Hint −3</button>
+        <button class="btn" id="btnSkip">Skip</button>
+        <button class="btn primary" id="btnNext" style="display:none;">Next →</button>
+      </div>
+    </div>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <div class="overlay" id="endOverlay">
+    <div class="modal">
+      <h2>Game Over</h2>
+      <p>You ran out of lives.</p>
+      <div class="big" id="endScore">0</div>
+      <p id="endBest"></p>
+      <div class="row">
+        <button class="btn primary" id="btnRestart" style="flex:2">Play again</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>A free game for learners of Chinese. <a href="/idioms">Browse the full idiom list →</a></p>
+  </footer>
+
+  <script src="js/idioms.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>

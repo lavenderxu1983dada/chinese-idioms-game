@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>猜成语</title>
+<style>
+  :root{
+    --bg:#0f1117; --bg2:#161a24; --panel:#1c2230; --panel2:#232a3b;
+    --ink:#e8e4d8; --muted:#8b93a7; --line:#2c3346;
+    --gold:#d4a955; --gold2:#f0c876; --red:#c8553d; --green:#5fb878;
+  }
+  *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB","Noto Sans CJK SC",sans-serif;
+    background:
+      radial-gradient(1200px 600px at 50% -10%, #20263a 0%, transparent 60%),
+      var(--bg);
+    color:var(--ink);
+    min-height:100%;
+    display:flex; align-items:center; justify-content:center;
+    padding:18px;
+    user-select:none;
+  }
+  .wrap{ width:100%; max-width:560px; }
+
+  .topbar{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .title{
+    font-size:22px; font-weight:700; letter-spacing:6px;
+    color:var(--gold2);
+    text-shadow:0 1px 0 rgba(0,0,0,.4);
+  }
+  .title small{ color:var(--muted); font-weight:400; font-size:11px; letter-spacing:1px; display:block; margin-top:2px;}
+  .lives{ display:flex; gap:6px; }
+  .heart{ font-size:18px; filter:grayscale(1) opacity(.4); transition:.25s; }
+  .heart.on{ filter:none; }
+
+  .stats{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:14px; }
+  .stat{
+    background:var(--panel); border:1px solid var(--line);
+    border-radius:10px; padding:10px 8px; text-align:center;
+  }
+  .stat .k{ font-size:11px; color:var(--muted); letter-spacing:1px; }
+  .stat .v{ font-size:20px; font-weight:700; color:var(--gold2); margin-top:2px; }
+  .stat.combo .v{ color:var(--red); }
+
+  .card{
+    background:linear-gradient(180deg, var(--panel) 0%, var(--bg2) 100%);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:20px 18px;
+    box-shadow:0 10px 40px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03);
+  }
+
+  .hint{ text-align:center; margin-bottom:16px; }
+  .emoji{
+    font-size:54px; line-height:1.1; letter-spacing:6px;
+    min-height:64px; display:flex; align-items:center; justify-content:center;
+    filter:drop-shadow(0 4px 10px rgba(0,0,0,.4));
+  }
+  .meaning{
+    margin-top:10px; color:var(--ink); font-size:15px; line-height:1.6;
+    background:rgba(0,0,0,.2); border-radius:10px; padding:10px 14px;
+    border-left:3px solid var(--gold);
+  }
+
+  .slots{ display:flex; gap:10px; justify-content:center; margin:20px 0 18px; flex-wrap:wrap; }
+  .slot{
+    width:64px; height:72px; border-radius:12px;
+    background:var(--panel2); border:1.5px dashed var(--line);
+    display:flex; align-items:center; justify-content:center;
+    font-size:34px; font-weight:700; color:var(--gold2);
+    position:relative; cursor:pointer; transition:.15s;
+  }
+  .slot.filled{ border-style:solid; border-color:var(--gold); background:#2a3142; }
+  .slot.correct{ border-color:var(--green); color:var(--green); background:rgba(95,184,120,.12); animation:pop .3s; }
+  .slot.wrong{ border-color:var(--red); color:var(--red); background:rgba(200,85,61,.12); animation:shake .4s; }
+
+  .pool{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
+  .chip{
+    min-width:48px; height:48px; padding:0 6px;
+    border-radius:10px; background:var(--panel2); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center;
+    font-size:22px; font-weight:600; color:var(--ink);
+    cursor:pointer; transition:.12s;
+  }
+  .chip:hover{ border-color:var(--gold); transform:translateY(-2px); }
+  .chip:active{ transform:translateY(0); }
+  .chip.used{ opacity:.25; pointer-events:none; }
+
+  .actions{ display:flex; gap:8px; margin-top:16px; }
+  .btn{
+    flex:1; padding:11px 12px; border-radius:10px; border:1px solid var(--line);
+    background:var(--panel2); color:var(--ink); font-size:14px; cursor:pointer;
+    transition:.15s; font-family:inherit;
+  }
+  .btn:hover{ border-color:var(--gold); }
+  .btn.primary{ background:linear-gradient(180deg,var(--gold2),var(--gold)); color:#1a1408; border-color:var(--gold); font-weight:700; }
+  .btn:disabled{ opacity:.4; cursor:not-allowed; }
+
+  .toast{
+    position:fixed; left:50%; top:24px; transform:translateX(-50%) translateY(-30px);
+    background:var(--panel); border:1px solid var(--line); color:var(--ink);
+    padding:12px 20px; border-radius:10px; font-size:15px; font-weight:600;
+    opacity:0; pointer-events:none; transition:.3s; z-index:50;
+    box-shadow:0 8px 30px rgba(0,0,0,.4);
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+  .toast.good{ border-color:var(--green); }
+  .toast.bad{ border-color:var(--red); }
+
+  .overlay{
+    position:fixed; inset:0; background:rgba(8,10,16,.82); backdrop-filter:blur(6px);
+    display:flex; align-items:center; justify-content:center; padding:20px; z-index:60;
+    opacity:0; pointer-events:none; transition:.3s;
+  }
+  .overlay.show{ opacity:1; pointer-events:auto; }
+  .modal{
+    background:linear-gradient(180deg,var(--panel),var(--bg2));
+    border:1px solid var(--line); border-radius:18px; padding:28px 24px;
+    width:100%; max-width:380px; text-align:center;
+    box-shadow:0 20px 60px rgba(0,0,0,.5);
+  }
+  .modal h2{ color:var(--gold2); font-size:24px; letter-spacing:3px; margin-bottom:8px;}
+  .modal p{ color:var(--muted); font-size:14px; line-height:1.7; margin-bottom:18px; }
+  .modal .big{ color:var(--ink); font-size:36px; font-weight:700; margin:10px 0;}
+  .modal .row{ display:flex; gap:8px; }
+
+  @keyframes pop{ 0%{transform:scale(.8)} 60%{transform:scale(1.12)} 100%{transform:scale(1)} }
+  @keyframes shake{ 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+
+  @media (max-width:380px){
+    .slot{ width:54px; height:62px; font-size:28px; }
+    .chip{ min-width:42px; height:44px; font-size:20px; }
+    .emoji{ font-size:46px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="title">猜成语<small>GUESS THE IDIOM</small></div>
+    <div class="lives" id="lives"></div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="k">分数</div><div class="v" id="score">0</div></div>
+    <div class="stat combo"><div class="k">连击</div><div class="v" id="combo">0</div></div>
+    <div class="stat"><div class="k">最佳</div><div class="v" id="best">0</div></div>
+  </div>
+
+  <div class="card">
+    <div class="hint">
+      <div class="emoji" id="emoji">🎯</div>
+      <div class="meaning" id="meaning">载入中…</div>
+    </div>
+
+    <div class="slots" id="slots"></div>
+    <div class="pool" id="pool"></div>
+
+    <div class="actions">
+      <button class="btn" id="btnClear">清空</button>
+      <button class="btn" id="btnHint">提示 (-3)</button>
+      <button class="btn primary" id="btnSkip">跳过</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="overlay" id="endOverlay">
+  <div class="modal">
+    <h2 id="endTitle">游戏结束</h2>
+    <p id="endSub"></p>
+    <div class="big" id="endScore">0</div>
+    <p id="endBest"></p>
+    <div class="row">
+      <button class="btn primary" id="btnRestart" style="flex:2">再来一局</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const IDIOMS = [
+  {w:"画蛇添足", e:"🐍➕🦶", m:"比喻做了多余的事，反而把事情弄糟。"},
+  {w:"守株待兔", e:"🌳🐰", m:"比喻不主动努力，妄想凭侥幸得到意外的收获。"},
+  {w:"亡羊补牢", e:"🐑🔧🏠", m:"出了问题以后想办法补救，可以防止继续受损失。"},
+  {w:"掩耳盗铃", e:"🙉🔔", m:"捂着自己的耳朵偷铃铛，比喻自欺欺人。"},
+  {w:"狐假虎威", e:"🦊👑🐯", m:"狐狸借老虎的威风去吓唬别人，比喻倚仗别人的势力欺压人。"},
+  {w:"对牛弹琴", e:"🎸🐂", m:"比喻对不懂事理的人讲道理或言事。"},
+  {w:"井底之蛙", e:"🐸🕳️", m:"井底的青蛙只能看到井口大的天，比喻见识短浅的人。"},
+  {w:"画龙点睛", e:"🐲👁️✨", m:"比喻艺术创作或写作在关键处加上精辟的一笔，使内容更加传神。"},
+  {w:"刻舟求剑", e:"🗡️🚢", m:"比喻拘泥固执，不知变通。"},
+  {w:"拔苗助长", e:"🌱⬆️🌾", m:"比喻违反事物发展的客观规律，急于求成，反而坏事。"},
+  {w:"杯水车薪", e:"🥤🔥🪵", m:"用一杯水去救一车着了火的柴草，比喻力量太小无济于事。"},
+  {w:"火上浇油", e:"🔥🛢️", m:"比喻使人更加愤怒或事态更加严重。"},
+  {w:"雪中送炭", e:"❄️🪵🔥", m:"下雪天送炭给人取暖，比喻在别人急需时给予帮助。"},
+  {w:"锦上添花", e:"🌸🎀", m:"在锦绣上再添花朵，比喻好上加好。"},
+  {w:"望梅止渴", e:"🟢🟢💧", m:"比喻愿望无法实现，用空想来安慰自己。"},
+  {w:"胸有成竹", e:"🎋💚", m:"比喻做事之前已有完整的考虑和把握。"},
+  {w:"叶公好龙", e:"🐉😍", m:"比喻表面爱好某事物，实际上并不真爱。"},
+  {w:"愚公移山", e:"⛰️⛏️", m:"比喻有毅力，不怕困难，坚持到底。"},
+  {w:"精卫填海", e:"🐦🌊🪨", m:"比喻意志坚决，不畏艰难。"},
+  {w:"夸父追日", e:"🏃☀️", m:"比喻有宏大志向或巨大的力量和气魄。"},
+  {w:"盲人摸象", e:"🦯🐘", m:"比喻对事物只凭片面了解就乱加猜测。"},
+  {w:"自相矛盾", e:"🗡️🛡️", m:"比喻自己说话做事前后抵触。"},
+  {w:"一箭双雕", e:"🏹🦅🦅", m:"一箭射中两只雕，比喻一举两得。"},
+  {w:"顺手牵羊", e:"✋🐑", m:"比喻乘机拿走别人的东西。"},
+  {w:"调虎离山", e:"🐯➡️⛰️", m:"比喻用计谋使对方离开原来有利的地势。"},
+  {w:"打草惊蛇", e:"🌾🐍", m:"比喻行动不密，致使对方有了防备。"},
+  {w:"声东击西", e:"🔊东💥西", m:"表面上声言攻打东边，实际上攻打西边，迷惑对方。"},
+  {w:"暗度陈仓", e:"🌙🚪", m:"比喻暗中进行某种活动。"},
+  {w:"隔岸观火", e:"🌊🔥", m:"比喻对别人的危难不去救助，坐观其变。"},
+  {w:"落井下石", e:"🕳️🪨", m:"别人掉进井里，不但不救，反而扔石头，比喻乘人有危难时加以陷害。"},
+  {w:"画饼充饥", e:"🥞👀", m:"画个饼来解除饥饿，比喻借空想安慰自己。"},
+  {w:"指鹿为马", e:"👆🦌➡️🐎", m:"比喻故意颠倒黑白，混淆是非。"},
+  {w:"破釜沉舟", e:"💥🍳⛵", m:"比喻下决心不顾一切干到底。"},
+  {w:"卧薪尝胆", e:"🛏️🗡️👅", m:"形容人刻苦自励，发奋图强。"},
+  {w:"四面楚歌", e:"🎵四面", m:"比喻陷入四面受敌、孤立无援的境地。"},
+  {w:"草木皆兵", e:"🌿👥", m:"把山上的草木都当做敌兵，形容极度惊慌时疑神疑鬼。"},
+  {w:"风声鹤唳", e:"🌬️🦢", m:"形容惊慌失措或自相惊扰。"},
+  {w:"纸上谈兵", e:"📄⚔️", m:"在纸面上谈论打仗，比喻空谈理论不能解决实际问题。"},
+  {w:"完璧归赵", e:"💎🔙", m:"把和氏璧完好地送回赵国，比喻把原物完整无缺地归还本人。"},
+  {w:"负荆请罪", e:"🌿🙇", m:"背着荆条向对方请罪，表示向人认错赔罪。"},
+  {w:"闻鸡起舞", e:"🐔🌅💃", m:"听到鸡叫就起来舞剑，比喻有志报国的人奋发图强。"},
+  {w:"悬梁刺股", e:"🏠🪡", m:"形容刻苦学习。"},
+  {w:"凿壁偷光", e:"🧱💡", m:"形容贫寒勤学。"},
+  {w:"老马识途", e:"🐴🛣️", m:"老马认识曾经走过的道路，比喻有经验的人熟悉情况。"},
+  {w:"塞翁失马", e:"🐴🏃", m:"比喻一时虽然受到损失，反而因此能得到好处。"},
+  {w:"鹬蚌相争", e:"🐦🐚", m:"比喻双方相持不下，第三者从中得利。"},
+  {w:"螳螂捕蝉", e:"🦗🦟", m:"比喻只顾眼前利益，而不顾后患。"},
+  {w:"鸡飞狗跳", e:"🐔✈️🐶", m:"形容惊慌得乱成一团。"},
+  {w:"狼吞虎咽", e:"🐺🍚🐯", m:"形容吃东西又猛又急的样子。"},
+  {w:"鹤立鸡群", e:"🦢🐔🐔", m:"比喻一个人的仪表或才能在周围一群人里显得很突出。"}
+];
+
+const $ = id => document.getElementById(id);
+let state;
+
+function shuffle(a){ a=[...a]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a; }
+function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+function newGame(){
+  state = {
+    score:0, combo:0, lives:3,
+    queue: shuffle(IDIOMS.map((_,i)=>i)),
+    used:new Set(),
+    best: +(localStorage.getItem("idiom_best")||0)
+  };
+  $("best").textContent = state.best;
+  $("endOverlay").classList.remove("show");
+  renderLives();
+  nextIdiom();
+}
+
+function nextIdiom(){
+  let idx = state.queue.find(i => !state.used.has(i));
+  if(idx===undefined){
+    state.used.clear();
+    state.queue = shuffle(IDIOMS.map((_,i)=>i));
+    idx = state.queue[0];
+  }
+  state.used.add(idx);
+  const item = IDIOMS[idx];
+  state.current = item;
+  state.slots = ["","","",""];
+  state.hinted = new Set();
+
+  const distractors = [];
+  const allChars = [...new Set(IDIOMS.flatMap(d=>[...d.w]))];
+  while(distractors.length<4){
+    const c = pick(allChars);
+    if(!item.w.includes(c) && !distractors.includes(c)) distractors.push(c);
+  }
+  state.pool = shuffle([...item.w, ...distractors]).map((ch,i)=>({ch,i,used:false}));
+
+  renderIdiom();
+}
+
+function renderIdiom(){
+  $("emoji").textContent = state.current.e;
+  $("meaning").textContent = state.current.m;
+  renderSlots();
+  renderPool();
+}
+
+function renderSlots(){
+  const el = $("slots"); el.innerHTML="";
+  state.slots.forEach((s,i)=>{
+    const d=document.createElement("div");
+    d.className="slot"+(s!==""?" filled":"");
+    if(s!=="") d.textContent=state.pool[s].ch;
+    d.onclick=()=>{ if(state.slots[i]!==""){
+      const idx = state.slots[i];
+      state.slots[i]="";
+      state.pool[idx].used=false;
+      renderSlots(); renderPool();
+    }};
+    el.appendChild(d);
+  });
+}
+
+function renderPool(){
+  const el=$("pool"); el.innerHTML="";
+  state.pool.forEach(p=>{
+    const d=document.createElement("div");
+    d.className="chip"+(p.used?" used":"");
+    d.textContent=p.ch;
+    d.onclick=()=>placeChar(p);
+    el.appendChild(d);
+  });
+}
+
+function placeChar(p){
+  if(p.used) return;
+  let target = state.slots.findIndex((s,i)=> s==="" && !state.hinted.has(i));
+  if(target===-1) target = state.slots.findIndex(s=>s==="");
+  if(target===-1) return;
+  state.slots[target]=p.i;
+  p.used=true;
+  renderSlots(); renderPool();
+  if(state.slots.every(s=>s!=="")) check();
+}
+
+function check(){
+  const guess = state.slots.map(i=>state.pool[i].ch).join("");
+  const ans = state.current.w;
+  const slots = [...document.querySelectorAll(".slot")];
+  if(guess===ans){
+    slots.forEach(s=>s.classList.add("correct"));
+    const gain = 10 + state.combo*2;
+    state.combo++;
+    state.score += gain;
+    toast("✓ 正确  +"+gain, "good");
+    setTimeout(()=>{ updateStats(); nextIdiom(); }, 900);
+  } else {
+    slots.forEach(s=>s.classList.add("wrong"));
+    state.combo=0;
+    state.lives--;
+    toast("✗ 再想想", "bad");
+    setTimeout(()=>{
+      renderLives(); updateStats();
+      if(state.lives<=0){ endGame(); return; }
+      state.slots = ["","","",""];
+      state.pool.forEach(p=>p.used=false);
+      state.hinted.forEach(pos=>{
+        const idx = state.pool.findIndex(p=>p.ch===ans[pos] && !p.used);
+        if(idx>=0){ state.slots[pos]=idx; state.pool[idx].used=true; }
+      });
+      renderSlots(); renderPool();
+    }, 700);
+  }
+}
+
+function useHint(){
+  if(state.score<3){ toast("分数不足","bad"); return; }
+  const ans = state.current.w;
+  let target=-1;
+  for(let i=0;i<4;i++){
+    const cur = state.slots[i]!=="" ? state.pool[state.slots[i]].ch : null;
+    if(!state.hinted.has(i) && cur!==ans[i]){ target=i; break; }
+  }
+  if(target===-1){ toast("已无可提示","bad"); return; }
+  state.score-=3;
+  if(state.slots[target]!==""){
+    state.pool[state.slots[target]].used=false;
+    state.slots[target]="";
+  }
+  const ch = ans[target];
+  const poolIdx = state.pool.findIndex(p=>p.ch===ch && !p.used);
+  if(poolIdx>=0){ state.slots[target]=poolIdx; state.pool[poolIdx].used=true; state.hinted.add(target); }
+  updateStats(); renderSlots(); renderPool();
+  toast("已揭示第"+(target+1)+"字","good");
+}
+
+function skip(){
+  if(state.combo>0){ state.combo=0; }
+  toast("答案："+state.current.w,"bad");
+  setTimeout(nextIdiom, 1100);
+}
+
+function clearSlots(){
+  state.slots=["","","",""];
+  state.pool.forEach(p=>p.used=false);
+  const ans=state.current.w;
+  state.hinted.forEach(pos=>{
+    const idx=state.pool.findIndex(p=>p.ch===ans[pos]);
+    if(idx>=0){ state.slots[pos]=idx; state.pool[idx].used=true; }
+  });
+  renderSlots(); renderPool();
+}
+
+function renderLives(){
+  const el=$("lives"); el.innerHTML="";
+  for(let i=0;i<3;i++){
+    const h=document.createElement("div");
+    h.className="heart"+(i<state.lives?" on":"");
+    h.textContent="❤";
+    el.appendChild(h);
+  }
+}
+
+function updateStats(){
+  $("score").textContent=state.score;
+  $("combo").textContent=state.combo;
+  $("best").textContent=Math.max(state.best,state.score);
+}
+
+function endGame(){
+  if(state.score>state.best){ state.best=state.score; localStorage.setItem("idiom_best",state.best); }
+  $("endScore").textContent=state.score;
+  $("endBest").textContent = state.score>0 && state.score===+(localStorage.getItem("idiom_best")||0) ? "🎉 新纪录！" : "最佳："+state.best;
+  $("endOverlay").classList.add("show");
+}
+
+let toastTimer;
+function toast(msg,type){
+  const t=$("toast");
+  t.textContent=msg;
+  t.className="toast show "+(type||"");
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove("show"),1300);
+}
+
+$("btnClear").onclick=clearSlots;
+$("btnHint").onclick=useHint;
+$("btnSkip").onclick=skip;
+$("btnRestart").onclick=newGame;
+
+newGame();
+</script>
+</body>
+</html>
