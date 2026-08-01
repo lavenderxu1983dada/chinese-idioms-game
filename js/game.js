@@ -10,13 +10,27 @@
 
   const DIFFS = { all:"All", 1:"Easy", 2:"Medium", 3:"Hard" };
 
-  let state, dom = {};
+  let state;
 
   const shuffle = a => { a=[...a]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a; };
   const pick = arr => arr[Math.floor(Math.random()*arr.length)];
 
   function activePool(){
     return state.diff === "all" ? IDIOMS : IDIOMS.filter(d => d.lvl === state.diff);
+  }
+
+  function setNote(msg){
+    const el = $("accountNote");
+    if(el) el.textContent = msg || "";
+  }
+
+  // Merge the user's cloud best into state and re-render if higher.
+  async function refreshServerBest(){
+    if(!(window.Auth && Auth.currentUser)){ setNote(""); return; }
+    setNote("Synced to your account");
+    const s = await Auth.getScore();
+    if(!s) return;
+    if((s.best||0) > state.best){ state.best = s.best; updateStats(); }
   }
 
   function newGame(){
@@ -34,6 +48,7 @@
     state.locked = false;
     renderLives();
     nextIdiom();
+    refreshServerBest();
   }
 
   function nextIdiom(){
@@ -66,7 +81,6 @@
     $("meaning").textContent = state.current.en;
     renderSlots();
     renderPool();
-    // hide the breakdown card while playing
     $("breakdown").innerHTML = "";
     $("breakdown").style.display = "none";
     $("btnNext").style.display = "none";
@@ -109,7 +123,6 @@
 
   function placeChar(p){
     if(state.locked || p.used) return;
-    // first empty slot that isn't hint-locked
     let target = state.slots.findIndex((s,i) => s === "" && !state.hinted.has(i));
     if(target === -1) target = state.slots.findIndex(s => s === "");
     if(target === -1) return;
@@ -136,7 +149,7 @@
       state.combo = 0;
       state.lives--;
       [...document.querySelectorAll(".slot")].forEach(s => s.classList.add("wrong"));
-      toast("Not quite — see the answer", "bad");
+      toast("Not quite \u2014 see the answer", "bad");
       updateStats(); renderLives();
       setTimeout(() => {
         reveal(false);
@@ -145,7 +158,6 @@
     }
   }
 
-  // Show the breakdown card after an attempt. `correct` only affects tone.
   function reveal(correct){
     const it = state.current;
     const bd = $("breakdown");
@@ -174,7 +186,7 @@
     });
     bd.appendChild(dl);
 
-    $("btnNext").textContent = correct ? "Next idiom →" : "Got it →";
+    $("btnNext").textContent = correct ? "Next idiom \u2192" : "Got it \u2192";
     $("btnNext").style.display = "block";
   }
 
@@ -210,7 +222,7 @@
     if(state.locked) return;
     state.combo = 0;
     state.locked = true;
-    toast("Revealing the answer…", "bad");
+    toast("Revealing the answer\u2026", "bad");
     setTimeout(() => { updateStats(); reveal(false); }, 450);
   }
 
@@ -231,7 +243,7 @@
     for(let i=0;i<3;i++){
       const h = document.createElement("div");
       h.className = "heart" + (i < state.lives ? " on" : "");
-      h.textContent = "♥";
+      h.textContent = "\u2665";
       el.appendChild(h);
     }
   }
@@ -247,8 +259,12 @@
     const newBest = state.score > state.best;
     if(newBest){ state.best = state.score; localStorage.setItem("cig_best", state.best); }
     $("endScore").textContent = state.score;
-    $("endBest").textContent = newBest ? "🎉 New personal best!" : ("Best: " + state.best);
+    $("endBest").textContent = newBest ? "\uD83C\uDF89 New personal best!" : ("Best: " + state.best);
     $("endOverlay").classList.add("show");
+    // Persist to the cloud if signed in.
+    if(window.Auth && Auth.currentUser){
+      Auth.saveScore(state.score, state.combo, state.diff).then(() => refreshServerBest());
+    }
   }
 
   let toastTimer;
@@ -262,7 +278,6 @@
 
   // ---- wiring ----
   function init(){
-    // difficulty segmented control
     const seg = $("diffSeg");
     Object.entries(DIFFS).forEach(([key,label]) => {
       const b = document.createElement("button");
@@ -274,14 +289,12 @@
         state.diff = key === "all" ? "all" : +key;
         state.seen = [];
         toast("Difficulty: " + label, "good");
-        // start fresh hand on new difficulty
         state.locked = false;
         nextIdiom();
       };
       seg.appendChild(b);
     });
 
-    // pinyin toggle
     const tog = $("pyToggle");
     tog.checked = false;
     tog.onchange = () => {
@@ -296,6 +309,10 @@
     $("btnRestart").onclick = newGame;
 
     newGame();
+    if(window.Auth){
+      Auth.init();
+      Auth.onLogin((u) => { if(u) refreshServerBest(); });
+    }
   }
 
   document.addEventListener("DOMContentLoaded", init);

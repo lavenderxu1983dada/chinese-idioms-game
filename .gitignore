@@ -14,3 +14,7 @@ Desktop.ini
 *.log
 .tmp/
 node_modules/
+
+# wrangler local state
+.wrangler/
+node_modules/

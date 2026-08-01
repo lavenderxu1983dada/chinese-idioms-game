@@ -1,0 +1,8 @@
+name = "chinese-idioms-game"
+compatibility_date = "2024-09-23"
+pages_build_output_dir = "."
+
+[[d1_databases]]
+binding = "DB"
+database_name = "cig-db"
+database_id = "b521fb14-b9b2-47cc-9faf-99b2bbc8e31b"
